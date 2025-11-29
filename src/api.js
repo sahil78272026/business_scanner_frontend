@@ -40,3 +40,10 @@ export function exportCSV({ lat, lng, type, radius, keyword }) {
 
   window.location.href = `${API_BASE}/api/export-csv?${params.toString()}`;
 }
+
+
+export async function autocompleteCity(query) {
+  const res = await fetch(`http://localhost:5000/api/autocomplete?query=${query}`);
+  return res.json();
+}
+

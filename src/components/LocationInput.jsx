@@ -1,47 +1,99 @@
+import { useState, useEffect } from "react";
+import { autocompleteCity } from "../api";
+
 export default function LocationInput({ city, setCity, location, setLocation, setError }) {
-    const handleUseMyLocation = () => {
-      if (!navigator.geolocation) {
-        setError("Your browser does not support location.");
+  const [suggestions, setSuggestions] = useState([]);
+
+  // When user types, fetch suggestions
+  useEffect(() => {
+    const fetch = async () => {
+      if (city.length < 2) {
+        setSuggestions([]);
         return;
       }
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-          setError("");
-        },
-        (err) => {
-          setError("Failed to get location: " + err.message);
-        }
-      );
+      const results = await autocompleteCity(city);
+      setSuggestions(results);
     };
 
-    return (
-      <div style={{ marginBottom: "20px" }}>
-        <label>
-          City (optional):{" "}
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Shimla, Delhi, Bangalore..."
-            style={{ padding: "6px", width: "230px" }}
-          />
-        </label>
+    const timeout = setTimeout(fetch, 300); // debounce
+    return () => clearTimeout(timeout);
+  }, [city]);
 
-        <div>
-          <button onClick={handleUseMyLocation} style={{ marginTop: "10px", padding: "6px 12px" }}>
-            Use My Current Location
-          </button>
+  return (
+    <div style={{ marginBottom: "20px", position: "relative" }}>
+      <label>
+        City (optional):{" "}
+        <input
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="Shimla, Delhi, Bangalore..."
+          style={{ padding: "6px", width: "230px" }}
+        />
+      </label>
 
-          {location && (
-            <span style={{ marginLeft: "12px" }}>
-              📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-            </span>
-          )}
+      {/* Suggestions Dropdown */}
+      {suggestions.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            background: "white",
+            border: "1px solid #ccc",
+            width: "230px",
+            zIndex: 10,
+            marginTop: "2px",
+            maxHeight: "150px",
+            overflowY: "auto",
+          }}
+        >
+          {suggestions.map((s, i) => (
+            <div
+              key={i}
+              style={{
+                padding: "6px",
+                cursor: "pointer",
+                borderBottom: "1px solid #eee",
+              }}
+              onClick={() => {
+                setCity(s);
+                setSuggestions([]);
+              }}
+            >
+              {s}
+            </div>
+          ))}
         </div>
+      )}
+
+      {/* Existing GPS button */}
+      <div>
+        <button
+          onClick={() => {
+            if (!navigator.geolocation) {
+              setError("Your browser does not support location.");
+              return;
+            }
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                setLocation({
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                });
+                setError("");
+              },
+              (err) => setError("Failed to get location: " + err.message)
+            );
+          }}
+          style={{ marginTop: "10px", padding: "6px 12px" }}
+        >
+          Use My Current Location
+        </button>
+
+        {location && (
+          <span style={{ marginLeft: "12px" }}>
+            📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+          </span>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
