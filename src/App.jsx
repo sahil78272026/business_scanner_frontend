@@ -17,6 +17,15 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ⭐ Check login status
+  const isLoggedIn = !!localStorage.getItem("token");
+
+  // ⭐ Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.reload(); // reload homepage
+  };
+
   const performSearch = async () => {
     try {
       setLoading(true);
@@ -24,7 +33,7 @@ function App() {
 
       let loc = location;
 
-      // If city provided, convert city → lat,lng
+      // Convert city → coordinates
       if (!loc && city.trim()) {
         const geo = await geocodeCity(city.trim());
         setLocation(geo);
@@ -54,11 +63,15 @@ function App() {
   };
 
   const exportFile = () => {
-    if (!location) {
-      setError("Search first to set a location.");
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      // Not logged in → redirect to login page
+      window.location.href = "/login";
       return;
     }
 
+    // If logged in → download CSV
     exportCSV({
       lat: location.lat,
       lng: location.lng,
@@ -70,6 +83,21 @@ function App() {
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
+
+      {/* ⭐ Login / Logout UI */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
+        {!isLoggedIn ? (
+          <>
+            <a href="/login" style={{ marginRight: "15px" }}>Login</a>
+            <a href="/register">Register</a>
+          </>
+        ) : (
+          <button onClick={handleLogout} style={{ padding: "6px 12px" }}>
+            Logout
+          </button>
+        )}
+      </div>
+
       <h1>Local Business Scanner</h1>
 
       <LocationInput
@@ -89,7 +117,11 @@ function App() {
         setKeyword={setKeyword}
       />
 
-      <button onClick={performSearch} disabled={loading} style={{ padding: "8px 16px", marginRight: "10px" }}>
+      <button
+        onClick={performSearch}
+        disabled={loading}
+        style={{ padding: "8px 16px", marginRight: "10px" }}
+      >
         {loading ? "Searching..." : "Search"}
       </button>
 
