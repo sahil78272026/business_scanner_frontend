@@ -24,7 +24,9 @@ export default function ProfilePage() {
             <th>Address</th>
             <th>Phone</th>
             <th>Website</th>
+            <th>Email</th>
             <th>Rating</th>
+
           </tr>
         </thead>
         <tbody>
@@ -34,6 +36,7 @@ export default function ProfilePage() {
               <td>{b.address}</td>
               <td>{b.phone}</td>
               <td>{b.website}</td>
+              <td>{b.emails}</td>
               <td>{b.rating}</td>
             </tr>
           ))}

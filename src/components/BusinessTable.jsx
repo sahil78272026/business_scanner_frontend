@@ -15,6 +15,7 @@ export default function BusinessTable({ businesses }) {
           <th>Reviews</th>
           <th>Website</th>
           <th>Maps</th>
+          <th>Email</th>
           <th>Save</th>   {/* ⭐ NEW COLUMN */}
         </tr>
       </thead>
@@ -43,6 +44,13 @@ export default function BusinessTable({ businesses }) {
                 <a href={b.maps_url} target="_blank" rel="noreferrer">
                   View
                 </a>
+              ) : (
+                "-"
+              )}
+            </td>
+            <td>
+              {b.emails && b.emails.length > 0 ? (
+                b.emails.join(", ")
               ) : (
                 "-"
               )}
