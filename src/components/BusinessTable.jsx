@@ -1,4 +1,5 @@
 import "../styles/table.css";
+import { saveBusiness } from "../api";
 
 export default function BusinessTable({ businesses }) {
   if (!businesses.length) return null;
@@ -14,6 +15,7 @@ export default function BusinessTable({ businesses }) {
           <th>Reviews</th>
           <th>Website</th>
           <th>Maps</th>
+          <th>Save</th>   {/* ⭐ NEW COLUMN */}
         </tr>
       </thead>
 
@@ -25,6 +27,7 @@ export default function BusinessTable({ businesses }) {
             <td>{b.phone}</td>
             <td>{b.rating}</td>
             <td>{b.reviews_count}</td>
+
             <td>
               {b.website ? (
                 <a href={b.website} target="_blank" rel="noreferrer">
@@ -34,6 +37,7 @@ export default function BusinessTable({ businesses }) {
                 "-"
               )}
             </td>
+
             <td>
               {b.maps_url ? (
                 <a href={b.maps_url} target="_blank" rel="noreferrer">
@@ -42,6 +46,23 @@ export default function BusinessTable({ businesses }) {
               ) : (
                 "-"
               )}
+            </td>
+
+            {/* ⭐ NEW SAVE BUTTON */}
+            <td>
+              <button
+                onClick={() => saveBusiness(b)}
+                style={{
+                  padding: "4px 8px",
+                  cursor: "pointer",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                }}
+              >
+                Save
+              </button>
             </td>
           </tr>
         ))}

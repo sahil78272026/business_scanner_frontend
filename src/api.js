@@ -74,3 +74,37 @@ export async function loginUser(email, password) {
   return data;
 }
 
+export async function saveBusiness(business) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Please login to save businesses");
+    window.location.href = "/login";
+    return;
+  }
+
+  const res = await fetch("http://localhost:5000/api/save-business", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(business),
+  });
+
+  const data = await res.json();
+
+  if (data.message) alert(data.message);
+}
+
+export async function getSavedBusinesses() {
+  const token = localStorage.getItem("token");
+  if (!token) return [];
+
+  const res = await fetch("http://localhost:5000/api/saved-businesses", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return await res.json();
+}
