@@ -72,6 +72,7 @@ export default function LocationInput({ city, setCity, location, setLocation, se
               setError("Your browser does not support location.");
               return;
             }
+
             navigator.geolocation.getCurrentPosition(
               (pos) => {
                 setLocation({
@@ -80,7 +81,19 @@ export default function LocationInput({ city, setCity, location, setLocation, se
                 });
                 setError("");
               },
-              (err) => setError("Failed to get location: " + err.message)
+              (err) => {
+                const messages = {
+                  1: "Permission denied. Please enable location access.",
+                  2: "Position unavailable. Try stepping outside or enabling GPS.",
+                  3: "Timeout. GPS signal too weak.",
+                };
+                setError(messages[err.code] || "Failed to get location.");
+              },
+              {
+                enableHighAccuracy: true,  // ⭐ forces GPS
+                timeout: 8000,
+                maximumAge: 0,
+              }
             );
           }}
           style={{ marginTop: "10px", padding: "6px 12px" }}

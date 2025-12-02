@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { geocodeCity, fetchBusinesses, exportCSV } from "./api";
+import { exportCSVFromFrontend, geocodeCity, fetchBusinesses, exportCSV } from "./api";
 
 import LocationInput from "./components/LocationInput";
 import SearchFilters from "./components/SearchFilters";
 import BusinessTable from "./components/BusinessTable";
 import ErrorMessage from "./components/ErrorMessage";
+
 
 function App() {
   const [city, setCity] = useState("");
@@ -16,6 +17,7 @@ function App() {
   const [businesses, setBusinesses] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nextToken, setNextToken] = useState(null);
 
   // ⭐ Check login status
   const isLoggedIn = !!localStorage.getItem("token");
@@ -51,9 +53,11 @@ function App() {
         type: businessType,
         radius,
         keyword,
+        next_page_token: null
       });
 
-      setBusinesses(data);
+      setBusinesses(data.businesses);
+      setNextToken(data.next_page_token || null);
     } catch (err) {
       setError(err.message || "Something went wrong");
       setBusinesses([]);
@@ -62,39 +66,75 @@ function App() {
     }
   };
 
-  const exportFile = () => {
-    const token = localStorage.getItem("token");
+  const loadMore = async () => {
+    if (!nextToken) return;
 
-    if (!token) {
-      // Not logged in → redirect to login page
-      window.location.href = "/login";
-      return;
-    }
-
-    // If logged in → download CSV
-    exportCSV({
+    const data = await fetchBusinesses({
       lat: location.lat,
       lng: location.lng,
       type: businessType,
       radius,
       keyword,
+      next_page_token: nextToken
     });
+
+    // append results to existing list
+    setBusinesses(prev => [...prev, ...data.businesses]);
+
+    // update token
+    setNextToken(data.next_page_token || null);
+  };
+
+  const exportFile = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!businesses.length) {
+      alert("Please search and load businesses before exporting.");
+      return;
+    }
+
+    // ⭐ MERGE EMAILS INTO BUSINESSES ⭐
+    const merged = businesses.map((b, index) => ({
+      ...b,
+      emails: window.emailMapGlobal[index] || []   // added below
+    }));
+
+    // ⭐ Send loaded businesses to backend
+    exportCSVFromFrontend(merged);
   };
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
 
       {/* ⭐ Login / Logout UI */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        marginBottom: "20px",
+        gap: "15px"
+      }}>
         {!isLoggedIn ? (
           <>
-            <a href="/login" style={{ marginRight: "15px" }}>Login</a>
+            <a href="/login">Login</a>
             <a href="/register">Register</a>
           </>
         ) : (
-          <button onClick={handleLogout} style={{ padding: "6px 12px" }}>
-            Logout
-          </button>
+          <>
+            <a href="/profile" style={{ textDecoration: "none" }}>Profile</a>
+
+            <button
+              onClick={handleLogout}
+              style={{ padding: "6px 12px", cursor: "pointer" }}
+            >
+              Logout
+            </button>
+          </>
         )}
       </div>
 
@@ -131,7 +171,14 @@ function App() {
 
       <ErrorMessage message={error} />
 
-      <BusinessTable businesses={businesses} />
+      <BusinessTable businesses={businesses}
+      />
+
+      {nextToken && (
+        <button onClick={loadMore} style={{ marginTop: "15px", padding: "8px 16px" }}>
+          Load More
+        </button>
+      )}
     </div>
   );
 }

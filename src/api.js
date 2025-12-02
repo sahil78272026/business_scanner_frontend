@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000"; // Change in production
+export const API_BASE = "http://localhost:5000"; // Change in production
 
 export async function geocodeCity(city) {
   const res = await fetch(`${API_BASE}/api/geocode?city=${encodeURIComponent(city)}`);
@@ -6,7 +6,7 @@ export async function geocodeCity(city) {
   return res.json();
 }
 
-export async function fetchBusinesses({ lat, lng, type, radius, keyword }) {
+export async function fetchBusinesses({ lat, lng, type, radius, keyword, next_page_token }) {
   const params = new URLSearchParams({
     lat,
     lng,
@@ -18,13 +18,25 @@ export async function fetchBusinesses({ lat, lng, type, radius, keyword }) {
     params.append("keyword", keyword.trim());
   }
 
+  // ⭐ Add pagination token when loading next pages
+  if (next_page_token) {
+    params.append("next_page_token", next_page_token);
+  }
+
   const res = await fetch(`${API_BASE}/api/businesses?${params.toString()}`);
   const data = await res.json();
 
   if (!res.ok) throw new Error(data.error || "API Error");
 
+  // ⭐ Data will be:
+  // {
+  //   businesses: [...],
+  //   next_page_token: "...",
+  // }
+
   return data;
 }
+
 
 export function exportCSV({ lat, lng, type, radius, keyword }) {
   const params = new URLSearchParams({
@@ -39,6 +51,27 @@ export function exportCSV({ lat, lng, type, radius, keyword }) {
   }
 
   window.location.href = `${API_BASE}/api/export-csv?${params.toString()}`;
+}
+
+
+export async function exportCSVFromFrontend(businesses) {
+  const res = await fetch("http://localhost:5000/api/export-csv", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ businesses })
+  });
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "businesses.csv";
+  a.click();
+
+  window.URL.revokeObjectURL(url);
 }
 
 

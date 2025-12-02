@@ -1,7 +1,35 @@
 import "../styles/table.css";
 import { saveBusiness } from "../api";
+import { API_BASE } from "../api";
+import { useState, useEffect } from "react";
 
 export default function BusinessTable({ businesses }) {
+  const [emailMap, setEmailMap] = useState({});
+
+  // Fetch emails for each business asynchronously
+  useEffect(() => {
+    businesses.forEach((b, index) => {
+      if (b.website) {
+        fetch(`${API_BASE}/api/scrape-email?url=${encodeURIComponent(b.website)}`)
+          .then(res => res.json())
+          .then(data => {
+            setEmailMap(prev => {
+              const updated = { ...prev, [index]: data.emails };
+              window.emailMapGlobal = updated;   // ⭐ STORE GLOBALLY
+              return updated;
+            });
+          });
+      } else {
+        setEmailMap(prev => {
+          const updated = { ...prev, [index]: [] };
+          window.emailMapGlobal = updated;   // ⭐ ensure stored
+          return updated;
+        });
+      }
+    });
+  }, [businesses]);
+
+
   if (!businesses.length) return null;
 
   return (
@@ -16,7 +44,7 @@ export default function BusinessTable({ businesses }) {
           <th>Website</th>
           <th>Maps</th>
           <th>Email</th>
-          <th>Save</th>   {/* ⭐ NEW COLUMN */}
+          <th>Save</th>
         </tr>
       </thead>
 
@@ -48,29 +76,19 @@ export default function BusinessTable({ businesses }) {
                 "-"
               )}
             </td>
+
             <td>
-              {b.emails && b.emails.length > 0 ? (
-                b.emails.join(", ")
+              {!b.website ? (
+                "No Email"
+              ) : emailMap[i] ? (
+                emailMap[i].length ? emailMap[i].join(", ") : "No Email"
               ) : (
-                "-"
+                "Fetching..."
               )}
             </td>
 
-            {/* ⭐ NEW SAVE BUTTON */}
             <td>
-              <button
-                onClick={() => saveBusiness(b)}
-                style={{
-                  padding: "4px 8px",
-                  cursor: "pointer",
-                  backgroundColor: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-              >
-                Save
-              </button>
+              <button onClick={() => saveBusiness(b)}>Save</button>
             </td>
           </tr>
         ))}
