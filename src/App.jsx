@@ -5,6 +5,7 @@ import LocationInput from "./components/LocationInput";
 import SearchFilters from "./components/SearchFilters";
 import BusinessTable from "./components/BusinessTable";
 import ErrorMessage from "./components/ErrorMessage";
+import Navbar from "./components/Navbar";
 
 
 function App() {
@@ -112,31 +113,7 @@ function App() {
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
 
       {/* ⭐ Login / Logout UI */}
-      <div style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        marginBottom: "20px",
-        gap: "15px"
-      }}>
-        {!isLoggedIn ? (
-          <>
-            <a href="/login">Login</a>
-            <a href="/register">Register</a>
-          </>
-        ) : (
-          <>
-            <a href="/profile" style={{ textDecoration: "none" }}>Profile</a>
-
-            <button
-              onClick={handleLogout}
-              style={{ padding: "6px 12px", cursor: "pointer" }}
-            >
-              Logout
-            </button>
-          </>
-        )}
-      </div>
+      <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
 
       <h1>Local Business Scanner</h1>
 
