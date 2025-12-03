@@ -141,3 +141,35 @@ export async function getSavedBusinesses() {
 
   return await res.json();
 }
+
+
+export async function updateStatus(id, status) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API_BASE}/api/update-status`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ id, status }),
+  });
+
+  return await res.json();
+}
+
+
+export async function updateNotes(id, notes) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API_BASE}/api/update-notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ id, notes }),
+  });
+
+  return await res.json();
+}
