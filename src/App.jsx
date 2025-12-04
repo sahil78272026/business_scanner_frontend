@@ -68,6 +68,7 @@ function App() {
   };
 
   const loadMore = async () => {
+    setLoading(true)
     if (!nextToken) return;
 
     const data = await fetchBusinesses({
@@ -83,21 +84,25 @@ function App() {
     setBusinesses(prev => [...prev, ...data.businesses]);
 
     // update token
+    setLoading(false)
     setNextToken(data.next_page_token || null);
   };
 
   const exportFile = () => {
     const token = localStorage.getItem("token");
 
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     if (!businesses.length) {
       alert("Please search and load businesses before exporting.");
       return;
     }
+
+    if (!token) {
+      alert("You are not logged in, Login to use this feature");
+      window.location.href = "/login";
+      return;
+    }
+
+
 
     // ⭐ MERGE EMAILS INTO BUSINESSES ⭐
     const merged = businesses.map((b, index) => ({

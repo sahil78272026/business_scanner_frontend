@@ -1,55 +1,92 @@
-import { useState } from "react";
-import { loginUser } from "../api";
+import { useEffect } from "react";
+import { loginWithPassword } from "../api";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  useEffect(() => {
+    /* global google */
+    if (!window.google) return;
 
-  const handleLogin = async () => {
-    setError("");
+    google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: handleGoogleResponse,
+    });
 
-    const data = await loginUser(email, password);
+    google.accounts.id.renderButton(
+      document.getElementById("google-login-btn"),
+      { theme: "filled_blue", size: "large", width: 280 }
+    );
+  }, []);
 
-    if (data.token) {
-      localStorage.setItem("token", data.token);
-      window.location.href = "/";
-      return;
+  const handleGoogleResponse = async (response) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "/";
+      } else {
+        alert(data.error || "Google sign-in failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during Google sign-in");
     }
+  };
 
-    if (data.error) setError(data.error);
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const email = form.email.value.trim();
+    const password = form.password.value;
+
+    try {
+      const data = await loginWithPassword({ email, password });
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "/";
+      } else {
+        alert(data.error || "Invalid credentials");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Login error");
+    }
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2 style={styles.heading}>Login to Your Account</h2>
+        <h2 style={styles.title}>Welcome Back 👋</h2>
+        <p style={styles.subtitle}>Log in to continue growing your leads.</p>
 
-        {error && <p style={styles.error}>{error}</p>}
+        <div id="google-login-btn" style={{ marginBottom: 18 }}></div>
 
-        <input
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div style={styles.divider}>or continue with email</div>
 
-        <input
-          style={styles.input}
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <form onSubmit={onSubmit} style={styles.form}>
+          <div>
+            <label style={styles.label}>Email</label>
+            <input name="email" type="email" placeholder="you@example.com" style={styles.input} required />
+          </div>
 
-        <button style={styles.button} onClick={handleLogin}>
-          Login
-        </button>
+          <div>
+            <label style={styles.label}>Password</label>
+            <input name="password" type="password" placeholder="••••••••" style={styles.input} required />
+          </div>
+
+          <button type="submit" style={styles.button}>
+            Login
+          </button>
+        </form>
 
         <p style={styles.registerText}>
-          Don’t have an account?{" "}
+          Not registered yet?{" "}
           <a href="/register" style={styles.link}>
-            Register
+            Create an account
           </a>
         </p>
       </div>
@@ -57,58 +94,80 @@ export default function LoginPage() {
   );
 }
 
+// 👉 Modern SaaS Styles
 const styles = {
   container: {
+    minHeight: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    minHeight: "80vh",
-    background: "#f1f5f9",
+    background: "#f8fafc",
+    padding: "20px",
   },
   card: {
+    width: "100%",
+    maxWidth: "400px",
     background: "white",
-    padding: "30px",
-    borderRadius: "10px",
-    width: "350px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+    padding: "35px",
+    borderRadius: "12px",
+    boxShadow: "0 8px 25px rgba(0,0,0,0.07)",
     textAlign: "center",
   },
-  heading: {
+  title: {
+    fontSize: "26px",
+    fontWeight: "700",
+    marginBottom: "5px",
+  },
+  subtitle: {
+    color: "#6b7280",
     marginBottom: "20px",
+    fontSize: "14px",
+  },
+  divider: {
+    fontSize: "13px",
+    color: "#6b7280",
+    margin: "12px 0 18px",
+    position: "relative",
+  },
+  form: {
+    textAlign: "left",
+  },
+  label: {
+    display: "block",
+    marginBottom: "4px",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#334155",
   },
   input: {
     width: "100%",
     padding: "12px",
-    margin: "10px 0",
-    borderRadius: "5px",
+    borderRadius: "6px",
     border: "1px solid #cbd5e1",
+    marginBottom: "14px",
     fontSize: "15px",
+    outline: "none",
   },
   button: {
     width: "100%",
     padding: "12px",
     background: "#2563eb",
     color: "white",
+    fontWeight: "600",
+    borderRadius: "6px",
     border: "none",
-    borderRadius: "5px",
-    marginTop: "10px",
     cursor: "pointer",
+    marginTop: "6px",
     fontSize: "16px",
   },
-  error: {
-    color: "red",
-    background: "#ffe4e6",
-    padding: "8px",
-    borderRadius: "5px",
-    fontSize: "14px",
-  },
   registerText: {
-    marginTop: "15px",
+    marginTop: "18px",
     fontSize: "14px",
+    color: "#475569",
   },
   link: {
     color: "#2563eb",
-    fontWeight: "bold",
+    fontWeight: "600",
     textDecoration: "none",
   },
 };

@@ -1,4 +1,26 @@
-export const API_BASE = "http://localhost:5000"; // Change in production
+// export const API_BASE = "http://localhost:5000"; // Change in production
+
+export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+export async function loginWithPassword({ email, password }) {
+  const res = await fetch(`${API_BASE}/api/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+}
+
+export async function registerWithPassword({ name, email, password }) {
+  const res = await fetch(`${API_BASE}/api/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+  return res.json();
+}
+
+
 
 export async function geocodeCity(city) {
   const res = await fetch(`${API_BASE}/api/geocode?city=${encodeURIComponent(city)}`);
@@ -173,3 +195,5 @@ export async function updateNotes(id, notes) {
 
   return await res.json();
 }
+
+
