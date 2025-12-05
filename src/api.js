@@ -76,8 +76,10 @@ export function exportCSV({ lat, lng, type, radius, keyword }) {
 }
 
 
+
+
 export async function exportCSVFromFrontend(businesses) {
-  const res = await fetch("http://localhost:5000/api/export-csv", {
+  const res = await fetch(`${API_BASE}/api/export-csv`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -98,12 +100,12 @@ export async function exportCSVFromFrontend(businesses) {
 
 
 export async function autocompleteCity(query) {
-  const res = await fetch(`http://localhost:5000/api/autocomplete?query=${query}`);
+  const res = await fetch(`${API_BASE}/api/autocomplete?query=${query}`);
   return res.json();
 }
 
 export async function registerUser(email, password) {
-  const res = await fetch("http://localhost:5000/api/register", {
+  const res = await fetch(`${API_BASE}/api/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -113,7 +115,7 @@ export async function registerUser(email, password) {
 }
 
 export async function loginUser(email, password) {
-  const res = await fetch("http://localhost:5000/api/login", {
+  const res = await fetch(`${API_BASE}/api/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -137,7 +139,7 @@ export async function saveBusiness(business) {
     return;
   }
 
-  const res = await fetch("http://localhost:5000/api/save-business", {
+  const res = await fetch(`${API_BASE}/api/save-business`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -155,7 +157,7 @@ export async function getSavedBusinesses() {
   const token = localStorage.getItem("token");
   if (!token) return [];
 
-  const res = await fetch("http://localhost:5000/api/saved-businesses", {
+  const res = await fetch(`${API_BASE}/api/saved-businesses`,{
     headers: {
       Authorization: `Bearer ${token}`
     }
