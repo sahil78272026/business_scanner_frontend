@@ -7,7 +7,6 @@ import BusinessTable from "./components/BusinessTable";
 import ErrorMessage from "./components/ErrorMessage";
 import Navbar from "./components/Navbar";
 
-
 function App() {
   const [city, setCity] = useState("");
   const [location, setLocation] = useState(null);
@@ -26,7 +25,7 @@ function App() {
   // ⭐ Logout function
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.reload(); // reload homepage
+    window.location.reload();
   };
 
   const performSearch = async () => {
@@ -36,7 +35,6 @@ function App() {
 
       let loc = location;
 
-      // Convert city → coordinates
       if (!loc && city.trim()) {
         const geo = await geocodeCity(city.trim());
         setLocation(geo);
@@ -68,7 +66,7 @@ function App() {
   };
 
   const loadMore = async () => {
-    setLoading(true)
+    setLoading(true);
     if (!nextToken) return;
 
     const data = await fetchBusinesses({
@@ -80,12 +78,9 @@ function App() {
       next_page_token: nextToken
     });
 
-    // append results to existing list
     setBusinesses(prev => [...prev, ...data.businesses]);
-
-    // update token
-    setLoading(false)
     setNextToken(data.next_page_token || null);
+    setLoading(false);
   };
 
   const exportFile = () => {
@@ -102,22 +97,17 @@ function App() {
       return;
     }
 
-
-
-    // ⭐ MERGE EMAILS INTO BUSINESSES ⭐
     const merged = businesses.map((b, index) => ({
       ...b,
-      emails: window.emailMapGlobal[index] || []   // added below
+      emails: window.emailMapGlobal[index] || []
     }));
 
-    // ⭐ Send loaded businesses to backend
     exportCSVFromFrontend(merged);
   };
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
 
-      {/* ⭐ Login / Logout UI */}
       <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
 
       <h1>Local Business Scanner</h1>
@@ -147,18 +137,36 @@ function App() {
         {loading ? "Searching..." : "Search"}
       </button>
 
-      <button onClick={exportFile} style={{ padding: "8px 16px" }}>
+      {/* ⭐ Export Button Always Visible but Disabled if Not Logged In */}
+      <button
+        onClick={exportFile}
+        disabled={!isLoggedIn}
+        title={isLoggedIn ? "Download CSV" : "Login to export data"}
+        style={{
+          padding: "8px 16px",
+          opacity: isLoggedIn ? 1 : 0.6,
+          cursor: isLoggedIn ? "pointer" : "not-allowed",
+        }}
+      >
         Export CSV
       </button>
 
       <ErrorMessage message={error} />
 
-      <BusinessTable businesses={businesses}
-      />
+      <BusinessTable businesses={businesses} />
 
       {nextToken && (
-        <button onClick={loadMore} style={{ marginTop: "15px", padding: "8px 16px" }}>
-          Load More
+        <button
+          onClick={loadMore}
+          disabled={loading}
+          style={{
+            marginTop: "15px",
+            padding: "8px 16px",
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
+          {loading ? "Loading..." : "Load More"}
         </button>
       )}
     </div>

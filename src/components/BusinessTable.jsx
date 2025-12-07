@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 
 export default function BusinessTable({ businesses }) {
   const [emailMap, setEmailMap] = useState({});
+  const isLoggedIn = !!localStorage.getItem("token");
+
 
   // Fetch emails for each business asynchronously
   useEffect(() => {
@@ -44,7 +46,10 @@ export default function BusinessTable({ businesses }) {
           <th>Website</th>
           <th>Maps</th>
           <th>Email</th>
+          {isLoggedIn && (
           <th>Save</th>
+          )}
+
         </tr>
       </thead>
 
@@ -67,6 +72,7 @@ export default function BusinessTable({ businesses }) {
               )}
             </td>
 
+
             <td>
               {b.maps_url ? (
                 <a href={b.maps_url} target="_blank" rel="noreferrer">
@@ -86,10 +92,11 @@ export default function BusinessTable({ businesses }) {
                 "Fetching..."
               )}
             </td>
-
+            {isLoggedIn && (
             <td>
               <button onClick={() => saveBusiness(b)}>Save</button>
             </td>
+          )}
           </tr>
         ))}
       </tbody>
