@@ -213,36 +213,53 @@ function App() {
         isLoggedIn={isLoggedIn}
       />
 
-      {businesses.length > 0 && (
-        <div style={{ marginTop: "20px", textAlign: "center" }}>
-          <button
-            onClick={exportFile}
-            disabled={
-              exporting ||
-              !isLoggedIn ||
-              (credits !== null && credits <= 0)
-            }
-            style={{
-              padding: "10px 20px",
-              fontSize: "16px",
-              opacity:
-                exporting ||
-                  !isLoggedIn ||
-                  (credits !== null && credits <= 0)
-                  ? 0.6
-                  : 1,
-              cursor:
-                exporting ||
-                  !isLoggedIn ||
-                  (credits !== null && credits <= 0)
-                  ? "not-allowed"
-                  : "pointer",
-            }}
-          >
-            {exporting ? "Exporting..." : "Export CSV"}
-          </button>
-        </div>
-      )}
+{businesses.length > 0 && (
+  <div style={{ marginTop: "20px", textAlign: "center" }}>
+
+    {/* Tooltip Wrapper */}
+    <div
+      style={{
+        display: "inline-block",
+        position: "relative",
+      }}
+      title={
+        !isLoggedIn
+          ? "Login to export"
+          : credits !== null && credits <= 0
+          ? "No credits left"
+          : ""
+      }
+    >
+      <button
+        onClick={exportFile}
+        disabled={
+          exporting ||
+          !isLoggedIn ||
+          (credits !== null && credits <= 0)
+        }
+        style={{
+          padding: "10px 20px",
+          fontSize: "16px",
+          opacity:
+            exporting ||
+            !isLoggedIn ||
+            (credits !== null && credits <= 0)
+              ? 0.6
+              : 1,
+          cursor:
+            exporting ||
+            !isLoggedIn ||
+            (credits !== null && credits <= 0)
+              ? "not-allowed"
+              : "pointer",
+        }}
+      >
+        {exporting ? "Exporting..." : "Export CSV"}
+      </button>
+    </div>
+  </div>
+)}
+
 
 
       {nextToken && (
