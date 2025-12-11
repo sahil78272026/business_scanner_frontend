@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { exportCSVFromFrontend, geocodeCity, fetchBusinesses, exportCSV } from "./api";
+import { useState, useEffect } from "react";
+import { exportCSVFromFrontend, geocodeCity, fetchBusinesses } from "./api";
 
 import LocationInput from "./components/LocationInput";
 import SearchFilters from "./components/SearchFilters";
@@ -18,16 +18,42 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [nextToken, setNextToken] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
-  // ⭐ Check login status
+  // ⭐ Credits
+  const [credits, setCredits] = useState(null);
+
+  // ⭐ Check login
   const isLoggedIn = !!localStorage.getItem("token");
 
-  // ⭐ Logout function
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.location.reload();
   };
 
+  // ⭐ Fetch credits
+  useEffect(() => {
+    async function loadCredits() {
+      if (!isLoggedIn) return setCredits(null);
+
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/credits`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok && typeof data.credits === "number") {
+          setCredits(data.credits);
+        }
+      } catch (err) {
+        console.error("Failed to load credits", err);
+      }
+    }
+    loadCredits();
+  }, [isLoggedIn]);
+
+  // ⭐ Search
   const performSearch = async () => {
     try {
       setLoading(true);
@@ -52,11 +78,13 @@ function App() {
         type: businessType,
         radius,
         keyword,
-        next_page_token: null
+        next_page_token: null,
       });
 
       setBusinesses(data.businesses);
       setNextToken(data.next_page_token || null);
+
+      if (typeof data.credits === "number") setCredits(data.credits);
     } catch (err) {
       setError(err.message || "Something went wrong");
       setBusinesses([]);
@@ -65,50 +93,91 @@ function App() {
     }
   };
 
+  // ⭐ Load More
   const loadMore = async () => {
-    setLoading(true);
-    if (!nextToken) return;
+    if (!nextToken || !location) return;
 
-    const data = await fetchBusinesses({
-      lat: location.lat,
-      lng: location.lng,
-      type: businessType,
-      radius,
-      keyword,
-      next_page_token: nextToken
-    });
+    try {
+      setLoading(true);
 
-    setBusinesses(prev => [...prev, ...data.businesses]);
-    setNextToken(data.next_page_token || null);
-    setLoading(false);
+      const data = await fetchBusinesses({
+        lat: location.lat,
+        lng: location.lng,
+        type: businessType,
+        radius,
+        keyword,
+        next_page_token: nextToken,
+      });
+
+      setBusinesses((prev) => [...prev, ...data.businesses]);
+      setNextToken(data.next_page_token || null);
+
+      if (typeof data.credits === "number") setCredits(data.credits);
+    } catch (err) {
+      console.error("Load more failed", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const exportFile = () => {
-    const token = localStorage.getItem("token");
+  // ⭐ Export CSV
+  const exportFile = async () => {
+    if (!isLoggedIn) {
+      alert("You are not logged in. Please login to export.");
+      window.location.href = "/login";
+      return;
+    }
 
     if (!businesses.length) {
       alert("Please search and load businesses before exporting.");
       return;
     }
 
-    if (!token) {
-      alert("You are not logged in, Login to use this feature");
-      window.location.href = "/login";
+    if (credits !== null && credits <= 0) {
+      alert("You have no credits left.");
       return;
     }
 
+    // ⭐ SHOW LOADING STATE
+    setExporting(true);
+
+    const token = localStorage.getItem("token");
+
     const merged = businesses.map((b, index) => ({
       ...b,
-      emails: window.emailMapGlobal[index] || []
+      emails:
+        (window.emailMapGlobal && window.emailMapGlobal[index]) ||
+        b.emails ||
+        [],
     }));
 
-    exportCSVFromFrontend(merged);
+    try {
+      await exportCSVFromFrontend(merged);
+
+      // Refresh credits after export
+      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/credits`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok && typeof data.credits === "number") {
+        setCredits(data.credits);
+      }
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("Export failed. Please try again.");
+    } finally {
+      // ⭐ STOP LOADING STATE
+      setExporting(false);
+    }
   };
+
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
-
-      <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
+      <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} credits={credits} />
 
       <h1>Local Business Scanner</h1>
 
@@ -137,23 +206,44 @@ function App() {
         {loading ? "Searching..." : "Search"}
       </button>
 
-      {/* ⭐ Export Button Always Visible but Disabled if Not Logged In */}
-      <button
-        onClick={exportFile}
-        disabled={!isLoggedIn}
-        title={isLoggedIn ? "Download CSV" : "Login to export data"}
-        style={{
-          padding: "8px 16px",
-          opacity: isLoggedIn ? 1 : 0.6,
-          cursor: isLoggedIn ? "pointer" : "not-allowed",
-        }}
-      >
-        Export CSV
-      </button>
-
       <ErrorMessage message={error} />
 
-      <BusinessTable businesses={businesses} />
+      <BusinessTable
+        businesses={businesses}
+        isLoggedIn={isLoggedIn}
+      />
+
+      {businesses.length > 0 && (
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <button
+            onClick={exportFile}
+            disabled={
+              exporting ||
+              !isLoggedIn ||
+              (credits !== null && credits <= 0)
+            }
+            style={{
+              padding: "10px 20px",
+              fontSize: "16px",
+              opacity:
+                exporting ||
+                  !isLoggedIn ||
+                  (credits !== null && credits <= 0)
+                  ? 0.6
+                  : 1,
+              cursor:
+                exporting ||
+                  !isLoggedIn ||
+                  (credits !== null && credits <= 0)
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
+        </div>
+      )}
+
 
       {nextToken && (
         <button
@@ -163,7 +253,6 @@ function App() {
             marginTop: "15px",
             padding: "8px 16px",
             opacity: loading ? 0.7 : 1,
-            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
           {loading ? "Loading..." : "Load More"}

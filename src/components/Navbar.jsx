@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function Navbar({ isLoggedIn, handleLogout }) {
+export default function Navbar({ isLoggedIn, handleLogout, credits }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -20,6 +20,11 @@ export default function Navbar({ isLoggedIn, handleLogout }) {
             <>
               <a href="/" style={styles.link}>Search</a>
               <a href="/profile" style={styles.link}>Profile</a>
+              {/* ⭐ CREDIT DISPLAY */}
+              <span style={styles.creditBadge}>
+                ⚡ {credits !== null ? credits : "--"}
+              </span>
+
 
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout
@@ -87,5 +92,14 @@ const styles = {
     padding: "6px 12px",
     borderRadius: "5px",
     cursor: "pointer",
+  },
+  // ⭐ CREDIT BADGE
+  creditBadge: {
+    background: "#0ea5e9",
+    padding: "4px 10px",
+    borderRadius: "12px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    color: "white",
   },
 };

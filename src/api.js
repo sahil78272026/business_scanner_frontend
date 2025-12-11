@@ -79,13 +79,20 @@ export function exportCSV({ lat, lng, type, radius, keyword }) {
 
 
 export async function exportCSVFromFrontend(businesses) {
+  const token = localStorage.getItem("token")
   const res = await fetch(`${API_BASE}/api/export-csv`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`   // ⭐ ADD THIS
     },
-    body: JSON.stringify({ businesses })
+    body: JSON.stringify({ businesses }),
   });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Export failed");
+  }
 
   const blob = await res.blob();
   const url = window.URL.createObjectURL(blob);
